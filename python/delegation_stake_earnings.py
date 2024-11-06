@@ -18,10 +18,12 @@ from rich import print
 #the coldkey is the wallet you wish to examine - default is the OTF foundation wallet
 #start & end dates
 
-api_key="<your apikey"
+api_key="<your apikey>"
+
 coldkey = "5HBtpwxuGNL1gwzwomwR7sjwUt8WXYSuWcLYN6f9KpTZkP4k"
-start_date = "2023-01-01T00:00:00Z"
-end_date = "2025-01-01T00:00:00Z"
+#unix timestamps
+start_date = 1704085200
+end_date = 1735707600
 # if this is a new wallet - thr first delegation event must be ignored.
 ## if this is an existing wallet - the first delegtion event must be recorded
 include_first_delegation = False
@@ -43,7 +45,7 @@ count = 200
 page =1
 
 while count >0:
-    url = f"https://api.taostats.io/api/v1/address/history?address={coldkey}&timestamp_start={start_date}&timestamp_end={end_date}&limit={count}&page={page}&order=timestamp:asc"
+    url = f"https://api.taostats.io/api/account/history/v1?address={coldkey}&timestamp_start={start_date}&timestamp_end={end_date}&limit={count}&page={page}&order=timestamp_asc"
     
     headers = {
         "accept": "application/json",
@@ -52,8 +54,8 @@ while count >0:
     
     response = requests.get(url, headers=headers)
     resJson = json.loads(response.text)
-    new_count = resJson['count']
-    total_address_history+=resJson['address_history']
+    new_count = resJson['pagination']['total_items']
+    total_address_history+=resJson['data']
     if new_count < 200 and new_count == count:
         #We did the last query
         break
@@ -96,7 +98,7 @@ count = 200
 page =1
 
 while count >0:
-    url = f"https://api.taostats.io/api/v1/delegate?account_id={coldkey}&timestamp_start={start_date}&timestamp_end={end_date}&limit={count}&page={page}&order=block_number:asc"
+    url = f"https://api.taostats.io/api/delegation/v1?nominator={coldkey}&timestamp_start={start_date}&timestamp_end={end_date}&limit={count}&page={page}&order=block_number_asc"
     
     headers = {
         "accept": "application/json",
@@ -105,8 +107,8 @@ while count >0:
     
     response = requests.get(url, headers=headers)
     resJson = json.loads(response.text)
-    new_count = resJson['count']
-    all_delegation_events+=resJson['items']
+    new_count = resJson['pagination']['total_items']
+    all_delegation_events+=resJson['data']
     if new_count < 200 and new_count == count:
         #We did the last query
         break
