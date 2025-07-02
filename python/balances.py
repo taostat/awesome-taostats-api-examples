@@ -13,13 +13,13 @@ from rich import print
 
 
 
-api_key="<put you API key here>"
+api_key="<tao-3c7faaee-3e61-417e-a5f1-e706eef3fa4e:f4052912>"
 
-coldkey = "5HBtpwxuGNL1gwzwomwR7sjwUt8WXYSuWcLYN6f9KpTZkP4k"
+coldkey = "5FWVerQFjFPcpFDHxwpXvq4yMoAQGfqaBTEkRmi6gPxqsMcT"
 
 #unix timestamps
-start_date = 1704085200
-end_date = 1735707600
+start_date = 1735689600
+end_date = 1751416324
 
 #Get the daily account balances
 total_address_history = []
