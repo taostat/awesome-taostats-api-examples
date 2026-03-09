@@ -4,4 +4,7 @@ The sample spreadsheets convert the Taostats CSVs into a format to suit the cryp
 
 As we do not know your tax country and circumstance - please seek a tax advisor to assist for your specific needs
 
-Note: these Spreadsheets are provided as samples of how to import - no warranty
+Note:
+1. these Spreadsheets are provided as samples of how to import 
+2. no warranty
+3. The "tag/type" might not be correct for your circumstance
