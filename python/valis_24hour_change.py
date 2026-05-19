@@ -1,21 +1,8 @@
-'''
-This script grabs the top 25 validators by stake. 
-
-It then collects all the delegation events for the last 24 hours (7200 blocks) and adds up all the delegation events for the top 25 delegators
-
-It prints out for each validator:
-stake yesterday
-stake now
-count - number of delegation events
-delegation in - staked to the vali
-delegation out - unstaked from the vali
-
-'''
-
 import requests, json
+import sys
+from tabulate import tabulate
 
-api_key=""
-
+api_key="tao-xxxx"
 
 headers = {
             "accept": "application/json",
@@ -28,7 +15,12 @@ number_of_valis = 25
 block_url = "https://api.taostats.io/api/block/v1?limit=1"
 block_response = requests.get(block_url, headers=headers)
 block_resJson = json.loads(block_response.text)
-block_end = block_resJson['data'][0]['block_number']
+
+try:
+    block_end = block_resJson['data'][0]['block_number']
+except KeyError as e:
+    print(f"Error: {e}. Please check the API response and try again.")
+    sys.exit(1)
 
 #start is 7200 blocks ago
 block_start = block_end -7200
@@ -53,39 +45,43 @@ for vali in vali_data:
 #get all delegation evenst for the last 24 hours and add to the validator data
 
 page =1
-total_pages=2
-while page< total_pages:
+total_pages = 1
+
+while page <= total_pages:
     delegation_url = f"https://api.taostats.io/api/delegation/v1?page={page}&limit=200&block_start={block_start}&block_end={block_end}"
     delegation_response = requests.get(delegation_url, headers=headers)
     delegation_resJson = json.loads(delegation_response.text)
-    total_pages = delegation_resJson['pagination']['total_pages']
+
+    if 'pagination' in delegation_resJson:
+        total_pages = delegation_resJson['pagination']['total_pages']
+    else:
+        total_pages = 1
+
+    if 'data' in delegation_resJson:
+        for delegation in delegation_resJson['data']:
+            hotkey = delegation['delegate']['ss58']
+            amount = float(delegation['amount'])/1e9
+            if hotkey in top_valis:
+                top_valis[hotkey]['count'] +=1
+                #add the data to the array
+                if delegation['action'] == "UNDELEGATE":
+                    top_valis[hotkey]['undelegate'] += amount
+                else:
+                    top_valis[hotkey]['delegate'] += amount
+    else:
+        print("No 'data' key found in the API response.")
+
     page +=1
-    #now get all the delegation events
-    for delegation in delegation_resJson['data']:
-        hotkey = delegation['delegate']['ss58']
-        amount = float(delegation['amount'])/1e9
-        if hotkey in top_valis:
-            top_valis[hotkey]['count'] +=1
-            #add the data to the array
-            if delegation['action'] == "UNDELEGATE":
-                top_valis[hotkey]['undelegate'] += amount
-            else:
-                top_valis[hotkey]['delegate'] += amount
 
-
-                                       
-print("validator\t\t\t Stake24 \t stakeNow \t Events  delegated \t undelegated")
-
+table_data = []
 for index, value in top_valis.items():
     name = value['name']
-    length = 25
-    if len(name) < length:
-        name += ' ' * (length - len(name))
     stake_now = round(value['stake'],0)
     stake_in = value['delegate']
     stake_out = value['undelegate']
     count = value['count']
     stake_yesterday = round(stake_now +stake_out - stake_in,0)
+    stake_change = stake_in - stake_out
     #silly display stuff
     digits =0
     if stake_in < 1:
@@ -99,4 +95,6 @@ for index, value in top_valis.items():
     elif stake_in < 10000:
         digits =1
 
-    print(name, '\t', stake_yesterday, '\t', stake_now, '\t', count, '\t', round(stake_in,digits), '\t', round(-stake_out,0))
+    table_data.append([name, stake_yesterday, stake_now, count, round(stake_in, digits), -round(stake_out,0), round(stake_change,0)])
+
+print(tabulate(table_data, headers=["Validator", "Stake24", "StakeNow", "Events", "Delegated", "Undelegated", "Stake Change"], tablefmt="grid"))
